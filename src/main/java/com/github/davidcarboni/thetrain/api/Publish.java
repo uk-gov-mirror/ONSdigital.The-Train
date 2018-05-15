@@ -1,6 +1,5 @@
 package com.github.davidcarboni.thetrain.api;
 
-import com.github.davidcarboni.encryptedfileupload.EncryptedFileItemFactory;
 import com.github.davidcarboni.restolino.framework.Api;
 import com.github.davidcarboni.thetrain.api.common.Endpoint;
 import com.github.davidcarboni.thetrain.helpers.ShaInputStream;
@@ -43,7 +42,6 @@ public class Publish extends Endpoint {
         LogBuilder log = logBuilder().endpoint(this);
         Transaction transaction = null;
         String transactionID = null;
-        String encryptionPassword = null;
         String uri = null;
 
         try {
@@ -75,17 +73,8 @@ public class Publish extends Endpoint {
 
                 log.uri(uri);
 
-                encryptionPassword = request.getParameter(ENCRYPTION_PASSWORD_KEY);
-                if (StringUtils.isBlank(encryptionPassword)) {
-                    log.responseStatus(BAD_REQUEST_400)
-                            .warn("bad request: publish requires encryptionPassword but none provided");
-
-                    response.setStatus(BAD_REQUEST_400);
-                    return new Result("Please provide transactionId and uri parameters.", true, null);
-                }
-
                 // Get the transaction
-                transaction = Transactions.get(transactionID, encryptionPassword);
+                transaction = Transactions.get(transactionID);
                 if (transaction == null) {
                     log.responseStatus(BAD_REQUEST_400)
                             .warn("bad request: no transaction with specified ID was found");
@@ -180,8 +169,7 @@ public class Publish extends Endpoint {
         InputStream result = null;
 
         // Set up the objects that do all the heavy lifting
-        EncryptedFileItemFactory factory = new EncryptedFileItemFactory();
-        ServletFileUpload upload = new ServletFileUpload(factory);
+        ServletFileUpload upload = new ServletFileUpload();
 
         try {
             // Read the items - this will save the values to temp files

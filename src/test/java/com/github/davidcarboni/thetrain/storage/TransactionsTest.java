@@ -36,14 +36,14 @@ public class TransactionsTest {
 
         // When
         // We create a transaction
-        Transaction transaction = Transactions.create(null);
+        Transaction transaction = Transactions.create();
 
         // Then
         // The transaction should exist and be populated with values
         assertNotNull(transaction);
         assertTrue(StringUtils.isNotBlank(transaction.id()));
         assertTrue(StringUtils.isNotBlank(transaction.startDate()));
-        assertNotNull(Transactions.get(transaction.id(), null));
+        assertNotNull(Transactions.get(transaction.id()));
     }
 
     /**
@@ -58,7 +58,7 @@ public class TransactionsTest {
 
         // When
         // We create a transaction
-        Transaction transaction = Transactions.create(password);
+        Transaction transaction = Transactions.create();
 
         // Then
         // The transaction should exist and be populated with values

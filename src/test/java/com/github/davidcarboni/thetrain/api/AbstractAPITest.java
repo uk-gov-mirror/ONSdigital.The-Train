@@ -17,8 +17,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
 public abstract class AbstractAPITest {
-
-    protected String encryptionPassword = "s3cur3";
+    
     protected String transactionID = "666";
 
     @Mock

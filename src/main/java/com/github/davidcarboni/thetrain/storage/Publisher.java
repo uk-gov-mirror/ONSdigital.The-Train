@@ -16,10 +16,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -140,8 +137,6 @@ public class Publisher {
 
         String shaInput;
         long sizeInput;
-        String shaOutput = null;
-        long sizeOutput = 0;
 
         // Add the file
         Path content = Transactions.content(transaction);
@@ -152,27 +147,17 @@ public class Publisher {
         if (target != null) {
             // Encrypt if a key was provided, then delete the original
             Files.createDirectories(target.getParent());
-            try (ShaOutputStream output = PathUtils.encryptingStream(target, transaction.key())) {
+            try (OutputStream output = PathUtils.outputStream(target)) {
                 IOUtils.copy(input, output);
                 shaInput = input.sha();
                 sizeInput = input.size();
-                shaOutput = output.sha();
-                sizeOutput = output.size();
-                if (StringUtils.equals(shaInput, shaOutput) && sizeInput == sizeOutput) {
-                    result = true;
-                } else {
-                    logBuilder()
-                            .addParameter("uri", uri)
-                            .addParameter("input", sizeInput + "/" + shaInput)
-                            .addParameter("output", sizeOutput + "/" + shaOutput)
-                            .info("SHA/size mismatch");
-                }
+                result = true;
             }
         }
 
         // Update the transaction
         UriInfo uriInfo = new UriInfo(uri, startDate);
-        uriInfo.stop(shaOutput, sizeOutput);
+        uriInfo.stop();
         uriInfo.setAction(action);
         transaction.addUri(uriInfo);
         return result;
@@ -285,9 +270,6 @@ public class Publisher {
 
         String action = backupExistingFile(transaction, targetUri);
 
-        String shaOutput = null;
-        long sizeOutput = 0;
-
         if (!Files.exists(source)) {
             logBuilder.addParameter("path", source.toString())
                     .info("could not move file because it does not exist");
@@ -305,17 +287,15 @@ public class Publisher {
         if (target != null) {
             Files.createDirectories(target.getParent());
             try (InputStream input = new FileInputStream(source.toString());
-                 ShaOutputStream output = PathUtils.encryptingStream(target, transaction.key())) {
+                 OutputStream output = PathUtils.outputStream(target)) {
                 IOUtils.copy(input, output);
-                shaOutput = output.sha();
-                sizeOutput = output.size();
                 moved = true;
             }
         }
 
         // Update the transaction
         UriInfo uriInfo = new UriInfo(targetUri, new Date());
-        uriInfo.stop(shaOutput, sizeOutput);
+        uriInfo.stop();
         uriInfo.setAction(action);
         transaction.addUri(uriInfo);
         return moved;
@@ -415,25 +395,7 @@ public class Publisher {
             // NB we don't need to worry about overwriting because
             // any existing copy will already have been moved.
             Files.createDirectories(target.getParent());
-            // NB We're using copy rather than move for two reasons:
-            // - To be able to review a transaction after the fact and see all the files that were published
-            // - If we use encryption we need to copy through a cipher stream to handle decryption
-            String uploadedSha = uriInfo.sha();
-            long uploadedSize = uriInfo.size();
-            String committedSha;
-            long committedSize;
-            try (ShaInputStream input = PathUtils.decryptingStream(source, transaction.key()); ShaOutputStream output = new ShaOutputStream(PathUtils.outputStream(target))) {
-                IOUtils.copy(input, output);
-                committedSha = output.sha();
-                committedSize = output.size();
-            }
-            if (StringUtils.equals(uploadedSha, committedSha) && uploadedSize == committedSize) {
-                uriInfo.commit();
-                result = true;
-            } else {
-                uriInfo.fail("Published file mismatch. Uploaded: " + uploadedSize + " bytes (" + uploadedSha + ") Committed: " + committedSize + " bytes (" + committedSha + ")");
-            }
-
+            uriInfo.commit();
         } catch (Throwable t) {
 
             // Record the error

@@ -15,19 +15,3 @@ FIve APIs are available to control file publishing:
  * GET `/transaction`, specifying a `transactionId` parameter in the url to get the details of a transaction.
  
 By default the publisher will operate on temp directories. It prints out console messages about the configuration variables you can use to set up directories in production, or take a look at the `Configuration` class.
-
-## Encryption
-
-If you wish to encrypt transferred files until a transaction is committed, specify an `encryptionPassword` parameter in the url. This will be used to trigger AES encryption when files are written to disk.
-
-NB to secure the transfer of files to The Train, run it over HTTPS. Encryption functionality is provided for data written to disk between `publish` and `commit`.
-
-HTTP uploads are processed by Apache Commons Fileupload and, if stored as temp files, are transparently encrypted using classes based on the implementations provided in Commons Fileupload:
-
- * `EncryptedFileItemFactory`
- * `EncryptedFileItem`
- * `EncryptedDeferredOutputStream`
-
-The `EncryptedFileItemFactory` class ensures that any data written to disk as temp files are encrypted using a temporary AES key.
-
-File upload encryption is implicit and requires no adjustment to the way Fileupload is used.
