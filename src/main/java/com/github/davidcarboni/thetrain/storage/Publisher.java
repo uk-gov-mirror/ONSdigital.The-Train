@@ -1,10 +1,8 @@
 package com.github.davidcarboni.thetrain.storage;
 
-import com.github.davidcarboni.cryptolite.Keys;
 import com.github.davidcarboni.cryptolite.Random;
 import com.github.davidcarboni.thetrain.helpers.PathUtils;
 import com.github.davidcarboni.thetrain.helpers.ShaInputStream;
-import com.github.davidcarboni.thetrain.helpers.ShaOutputStream;
 import com.github.davidcarboni.thetrain.helpers.UnionInputStream;
 import com.github.davidcarboni.thetrain.json.Transaction;
 import com.github.davidcarboni.thetrain.json.UriInfo;
@@ -16,7 +14,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -189,7 +190,7 @@ public class Publisher {
 
         int filesMoved = 0;
         List<Future<Boolean>> futures = new ArrayList<>();
-        ExecutorService pool = Executors.newFixedThreadPool(8);
+        ExecutorService pool = Executors.newFixedThreadPool(100);
 
         try {
             for (FileCopy move : manifest.getFilesToCopy()) {
@@ -327,10 +328,13 @@ public class Publisher {
     }
 
     public static boolean commit(Transaction transaction, Path website) throws IOException {
+        long commitStart = System.currentTimeMillis();
         boolean result = true;
 
         LogBuilder logBuilder = logBuilder();
 
+        // step 1
+        long deleteURISStart = System.currentTimeMillis();
         // Apply any deletes that are defined in the transaction first to ensure we do not delete updated files.
         for (UriInfo uriInfo : transaction.urisToDelete()) {
             String uri = uriInfo.uri();
@@ -340,10 +344,15 @@ public class Publisher {
                     .info("deleting directory");
             FileUtils.deleteDirectory(target.toFile());
         }
+        logBuilder.addParameter("timeTaken", System.currentTimeMillis() - deleteURISStart)
+                .info("commit step 1: delete uris");
 
+
+        // step 2
+        long commitFiles = System.currentTimeMillis();
         // Then move file updates from the transaction to the website.
         List<Future<Boolean>> futures = new ArrayList<>();
-        ExecutorService pool = Executors.newFixedThreadPool(8);
+        ExecutorService pool = Executors.newFixedThreadPool(100);
 
         try {
             List<String> uris = listUris(transaction);
@@ -353,6 +362,8 @@ public class Publisher {
         } finally {
             if (pool != null) pool.shutdown();
         }
+        logBuilder.addParameter("timeTaken", System.currentTimeMillis() - commitFiles)
+                .info("commit step 2: commit files");
 
         // Process results of any asynchronous writes
         for (Future<Boolean> future : futures) {
@@ -369,6 +380,8 @@ public class Publisher {
             Transactions.end(transaction);
         }
 
+        logBuilder.addParameter("timeTaken", System.currentTimeMillis() - commitStart)
+                .info("commit: entire step");
         return result;
     }
 
@@ -382,6 +395,9 @@ public class Publisher {
      */
     static boolean commitFile(String uri, Transaction transaction, Path website) throws IOException {
         boolean result = false;
+
+        LogBuilder logBuilder = logBuilder();
+        long commitFileStart = System.currentTimeMillis();
 
         UriInfo uriInfo = findUri(uri, transaction);
         Path source = PathUtils.toPath(uri, Transactions.content(transaction));
@@ -398,9 +414,13 @@ public class Publisher {
             // NB We're using copy rather than move for two reasons:
             // - To be able to review a transaction after the fact and see all the files that were published
             // - If we use encryption we need to copy through a cipher stream to handle decryption
+
+            long copyContentStart = System.currentTimeMillis();
             try (InputStream input = PathUtils.inputStream(source); OutputStream output = PathUtils.outputStream(target)) {
                 IOUtils.copy(input, output);
             }
+            logBuilder.addParameter("timeTaken", System.currentTimeMillis() - copyContentStart)
+                    .info("commitFile: copy content step");
             uriInfo.commit();
             result = true;
 
@@ -415,7 +435,8 @@ public class Publisher {
                 transaction.addError(error);
             }
         }
-
+        logBuilder.addParameter("timeTaken", System.currentTimeMillis() - commitFileStart)
+                .info("commitFile");
         return result;
     }
 
