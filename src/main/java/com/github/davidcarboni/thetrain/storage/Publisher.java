@@ -15,9 +15,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -416,11 +419,20 @@ public class Publisher {
             // - If we use encryption we need to copy through a cipher stream to handle decryption
 
             long copyContentStart = System.currentTimeMillis();
+            try (
+                    FileInputStream fis = new FileInputStream(source.toFile());
+                    FileOutputStream fos = new FileOutputStream(target.toFile());
+                    FileChannel sourceChannel = fis.getChannel();
+                    FileChannel destChannel = fos.getChannel()
+            ) {
+                destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+            }
+            logBuilder.timeSince(copyContentStart).info("commitFile: copy content");
+/*
+            long copyContentStart = System.currentTimeMillis();
             try (InputStream input = PathUtils.inputStream(source); OutputStream output = PathUtils.outputStream(target)) {
                 IOUtils.copy(input, output);
-            }
-            logBuilder.addParameter("timeTaken", System.currentTimeMillis() - copyContentStart)
-                    .info("commitFile: copy content step");
+            }*/
             uriInfo.commit();
             result = true;
 
