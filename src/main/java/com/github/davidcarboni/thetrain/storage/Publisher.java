@@ -344,8 +344,7 @@ public class Publisher {
                     .info("deleting directory");
             FileUtils.deleteDirectory(target.toFile());
         }
-        logBuilder.addParameter("timeTaken", System.currentTimeMillis() - deleteURISStart)
-                .info("commit step 1: delete uris");
+        logBuilder.timeSince(deleteURISStart).info("commit step 1: delete uris");
 
 
         // step 2
@@ -360,10 +359,10 @@ public class Publisher {
                 futures.add(pool.submit(() -> commitFile(uri, transaction, website)));
             }
         } finally {
-            if (pool != null) pool.shutdown();
+            if (pool != null) {
+                pool.shutdown();
+            }
         }
-        logBuilder.addParameter("timeTaken", System.currentTimeMillis() - commitFiles)
-                .info("commit step 2: commit files");
 
         // Process results of any asynchronous writes
         for (Future<Boolean> future : futures) {
@@ -374,14 +373,15 @@ public class Publisher {
             }
         }
 
+        logBuilder.timeSince(commitFiles).info("commit step 2: commit files");
+
         transaction.commit(result);
 
         if (result) {
             Transactions.end(transaction);
         }
 
-        logBuilder.addParameter("timeTaken", System.currentTimeMillis() - commitStart)
-                .info("commit: entire step");
+        logBuilder.timeSince(commitStart).info("commit: entire step");
         return result;
     }
 

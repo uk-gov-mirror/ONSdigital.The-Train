@@ -80,6 +80,7 @@ public class Transactions {
      * @param transaction
      */
     public static void end(Transaction transaction) {
+        long start = System.currentTimeMillis();
         if (transactionExecutorMap.containsKey(transaction.id())) {
             transactionExecutorMap.get(transaction.id()).shutdown();
             transactionExecutorMap.remove(transaction.id());
@@ -88,6 +89,7 @@ public class Transactions {
         if (transactionMap.containsKey(transaction.id())) {
             transactionMap.remove(transaction.id());
         }
+        logBuilder().timeSince(start).info("transaction ended");
     }
 
     /**
