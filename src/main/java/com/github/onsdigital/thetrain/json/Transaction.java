@@ -198,5 +198,19 @@ public class Transaction {
         }
     }
 
+    public Transaction cloneOnlyErrors() {
+        Transaction clone = new Transaction();
+        clone.id = this.id;
+        clone.status = this.status;
+        clone.startDate = this.startDate;
+        clone.endDate = this.endDate;
+        clone.errors = this.errors;
+        for (UriInfo uriInfo : this.uriInfos) {
+            if (uriInfo != null && uriInfo.error() != null)  {
+                clone.uriInfos.add(uriInfo);
+            }
+        }
+        return clone;
+    }
 
 }

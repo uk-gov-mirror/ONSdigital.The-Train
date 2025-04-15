@@ -68,7 +68,7 @@ public class AddFileToTransaction extends BaseHandler {
                 .data("uri", uri)
                 .log("file added to publish transaction successfully");
 
-        return new Result("Published to " + uri, false, transaction);
+        return new Result("Published to " + uri, false, transaction.cloneOnlyErrors());
     }
 
     /**
