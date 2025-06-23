@@ -80,9 +80,9 @@
             <version>1.6.0</version>
         </dependency>
         <dependency>
-            <groupId>com.github.davidcarboni</groupId>
+            <groupId>com.github.onsdigital</groupId>
             <artifactId>encrypted-file-upload</artifactId>
-            <version>1.0.2</version>
+            <version>2.3.0</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
