@@ -52,6 +52,8 @@
             <artifactId>spark-core</artifactId>
             <version>2.9.4</version>
         </dependency>
+        <!-- com.sparkjava spark-core is EOL. The dependencies below are declared
+          to override jetty dependencies brought in by it. -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
@@ -62,6 +64,8 @@
             <artifactId>websocket-server</artifactId>
             <version>${jetty.version}</version>
         </dependency>
+        <!-- end spark-core overridden dependencies -->
+
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
