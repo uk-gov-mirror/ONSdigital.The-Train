@@ -98,3 +98,12 @@ configurated `transactions` directory. :tada:
 [1]: https://github.com/ONSdigital/zebedee
 [2]: https://github.com/ONSdigital/florence
 [3]: https://stedolan.github.io/jq/tutorial/
+
+### Tools
+
+To run some of our tests you will need additional tooling:
+
+#### Audit
+
+For Java auditing, we use mvn `ossindex:audit` which requires you to [setup an OSS Index account](https://github.com/ONSdigital/dp/blob/main/guides/MAC_SETUP.md#oss-index-account-and-configuration)
+and make some updates to [Maven: Local Setup for ossindex:audit](https://github.com/ONSdigital/dp/blob/main/guides/MAC_SETUP.md#maven-local-setup-for-ossindexaudit)
