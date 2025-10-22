@@ -2,6 +2,9 @@ SHELL=bash
 
 JAVA_OPTS=-Xmx1024m -Xms1024m -Xdebug -Xrunjdwp:transport=dt_socket,address=8004,server=y,suspend=n
 
+OSSINDEX_ERRORS = "Unable to contact OSS Index|authentication failed|401 Unauthorized|403 Forbidden|429 Too Many Requests|Too many requests|Rate limit|Unknown host|Connection refused|timed out|unreachable"
+
+
 ## The default website content directory
 WEBSITE_DEFAULT:=target/website
 
@@ -61,7 +64,12 @@ endif
 test:
 	mvn -Dossindex.skip test
 audit:
-	mvn ossindex:audit
+	@echo "🔍 Running OSS Index audit..." && \
+	mkdir -p target && \
+	mvn -B ossindex:audit > target/ossindex-audit.log 2>&1; status=$$?; cat target/ossindex-audit.log; \
+	[ $$status -eq 0 ] && grep -Eiqn $(OSSINDEX_ERRORS) target/ossindex-audit.log && \
+		{ echo "❌ OSS Index API/auth/network error detected — see target/ossindex-audit.log"; exit 1; }; \
+	exit $$status
 ensure_dirs:
 	@if [[ $(WEBSITE) == $(WEBSITE_DEFAULT) ]]; then mkdir -p $(WEBSITE_DEFAULT); fi
 	@if [[ $(TRANSACTION_STORE) == $(TRANSACTIONS_DEFAULT) ]]; then mkdir -p $(TRANSACTIONS_DEFAULT); fi
