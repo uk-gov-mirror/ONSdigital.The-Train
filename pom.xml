@@ -230,8 +230,12 @@
                         <!-- Note - OSS Index suppressions are global, not per dependency -->
                         <!--
                             Jira epic to remove the following exclusion: DIS-4777
+                            This covers the upgrade to jetty
                          -->
                         <exclude>CVE-2026-2332</exclude>
+                        <exclude>CVE-2026-10050</exclude>
+                        <exclude>CVE-2026-12611</exclude>
+                        <exclude>CVE-2026-19203</exclude>
                         <!-- End DIS-4777 -->
                     </excludeVulnerabilityIds>
                 </configuration>
