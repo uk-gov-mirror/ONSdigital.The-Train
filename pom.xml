@@ -236,6 +236,8 @@
                         <exclude>CVE-2026-10050</exclude>
                         <exclude>CVE-2026-12611</exclude>
                         <exclude>CVE-2026-19203</exclude>
+                        <exclude>CVE-2026-76184</exclude>
+                        <exclude>CVE-2026-77711</exclude>
                         <!-- End DIS-4777 -->
 
                         <!-- 
